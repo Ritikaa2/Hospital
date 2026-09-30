@@ -8,10 +8,20 @@ const {
   resetPassword
 } = require('../controllers/authController');
 
-router.post('/signup', signup);
-router.post('/login', login);
-router.post('/forgot-password', forgotPassword);
-router.post('/verify-otp', verifyOTP);
-router.post('/reset-password', resetPassword);
+// Validation middlewares import karna
+const {
+  signupValidation,
+  loginValidation,
+  forgotPasswordValidation,
+  verifyOtpValidation,
+  resetPasswordValidation
+} = require('../middleware/validation');
+
+// Auth Routes with respective validation middleware
+router.post('/signup', signupValidation, signup);
+router.post('/login', loginValidation, login);
+router.post('/forgot-password', forgotPasswordValidation, forgotPassword);
+router.post('/verify-otp', verifyOtpValidation, verifyOTP);
+router.post('/reset-password', resetPasswordValidation, resetPassword);
 
 module.exports = router;

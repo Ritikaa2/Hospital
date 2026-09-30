@@ -1,13 +1,13 @@
 const { query } = require('../db');
 
-// POST /appointments (Book new appointment)
-async function createAppointment(req, res) {
+// Book a new appointment
+const createAppointment = async (req, res) => {
   try {
     const patient_id = req.user.userId;
     const { doctor_id, department_id, appointment_date, appointment_time } = req.body;
 
     if (!doctor_id || !department_id || !appointment_date || !appointment_time) {
-      return res.status(400).json({ message: 'Please fill all appointment details' });
+      return res.status(400).json({ message: 'All fields are required' });
     }
 
     const sql = `
@@ -15,32 +15,25 @@ async function createAppointment(req, res) {
       VALUES (?, ?, ?, ?, ?, 'Pending')
     `;
 
-    const result = await query(sql, [
-      patient_id,
-      doctor_id,
-      department_id,
-      appointment_date,
-      appointment_time
-    ]);
+    const result = await query(sql, [patient_id, doctor_id, department_id, appointment_date, appointment_time]);
 
-    return res.status(201).json({
+    res.status(201).json({
       message: 'Appointment booked successfully',
       appointmentId: result.insertId || 1
     });
   } catch (error) {
     console.error('Book appointment error:', error);
-    return res.status(500).json({ message: 'Failed to book appointment' });
+    res.status(500).json({ message: 'Server error' });
   }
-}
+};
 
-// GET /appointments/my (Patient's appointments)
-async function getMyAppointments(req, res) {
+// Get logged-in patient's appointments
+const getMyAppointments = async (req, res) => {
   try {
     const patient_id = req.user.userId;
 
     const sql = `
-      SELECT a.id, a.patient_id, a.doctor_id, a.department_id, a.appointment_date, a.appointment_time, a.status, a.created_at,
-             u.name AS doctor_name, d.specialization, dp.name AS department_name
+      SELECT a.*, u.name AS doctor_name, d.specialization, dp.name AS department_name
       FROM appointments a
       JOIN doctors d ON a.doctor_id = d.id
       JOIN users u ON d.user_id = u.id
@@ -50,25 +43,24 @@ async function getMyAppointments(req, res) {
     `;
 
     const appointments = await query(sql, [patient_id]);
-    return res.status(200).json(appointments);
+    res.status(200).json(appointments);
   } catch (error) {
     console.error('Get my appointments error:', error);
-    return res.status(500).json({ message: 'Error fetching your appointments' });
+    res.status(500).json({ message: 'Server error' });
   }
-}
+};
 
-// GET /appointments/doctor (Doctor's appointments with consultation details)
-async function getDoctorAppointments(req, res) {
+// Get doctor's appointments
+const getDoctorAppointments = async (req, res) => {
   try {
     const userId = req.user.userId;
 
-    // Find doctor id
-    const docRows = await query('SELECT id FROM doctors WHERE user_id = ?', [userId]);
-    const doctorId = docRows.length > 0 ? docRows[0].id : 1;
+    // Get doctor ID for this user
+    const doc = await query('SELECT id FROM doctors WHERE user_id = ?', [userId]);
+    const doctorId = doc.length > 0 ? doc[0].id : 1;
 
     const sql = `
-      SELECT a.id, a.patient_id, a.doctor_id, a.department_id, a.appointment_date, a.appointment_time, a.status, a.created_at,
-             u.name AS patient_name, u.email AS patient_email, dp.name AS department_name
+      SELECT a.*, u.name AS patient_name, u.email AS patient_email, dp.name AS department_name
       FROM appointments a
       JOIN users u ON a.patient_id = u.id
       JOIN departments dp ON a.department_id = dp.id
@@ -77,70 +69,41 @@ async function getDoctorAppointments(req, res) {
     `;
 
     const appointments = await query(sql, [doctorId]);
-
-    // Fetch related medical records for each patient to display prescriptions and notes
-    const records = await query('SELECT * FROM medical_records WHERE doctor_id = ? ORDER BY id DESC', [doctorId]);
-
-    const enrichedAppointments = appointments.map(app => {
-      const patientRecords = records.filter(r => r.patient_id == app.patient_id);
-      const latestRecord = patientRecords[0] || null;
-      return {
-        ...app,
-        prescription: latestRecord ? latestRecord.description : '',
-        consultation_title: latestRecord ? latestRecord.title : '',
-        record_date: latestRecord ? latestRecord.record_date : ''
-      };
-    });
-
-    return res.status(200).json(enrichedAppointments);
+    res.status(200).json(appointments);
   } catch (error) {
     console.error('Get doctor appointments error:', error);
-    return res.status(500).json({ message: 'Error fetching doctor appointments' });
+    res.status(500).json({ message: 'Server error' });
   }
-}
+};
 
-// PUT /appointments/:id/status (Confirm, Cancel, Complete with Prescription & Notes)
-async function updateAppointmentStatus(req, res) {
+// Update appointment status (Pending, Confirmed, Completed, Cancelled)
+const updateAppointmentStatus = async (req, res) => {
   try {
     const { id } = req.params;
-    const { status, prescription, notes, diagnosis } = req.body;
+    const { status, prescription, notes } = req.body;
 
-    const validStatuses = ['Pending', 'Confirmed', 'Completed', 'Cancelled'];
-    if (!validStatuses.includes(status)) {
-      return res.status(400).json({ message: 'Invalid status value' });
-    }
-
-    // Update appointment status
     await query('UPDATE appointments SET status = ? WHERE id = ?', [status, id]);
 
-    // If completing the consultation with prescription and doctor notes, save to medical_records
-    if (status === 'Completed' && (prescription || notes || diagnosis)) {
-      const appRows = await query('SELECT patient_id, doctor_id, appointment_date FROM appointments WHERE id = ?', [id]);
-      if (appRows.length > 0) {
-        const app = appRows[0];
-        const title = diagnosis ? `Prescription - ${diagnosis}` : 'Doctor Consultation & Prescription';
-        
-        let formattedDescription = '';
-        if (prescription) formattedDescription += `Prescribed Medication:\n${prescription}\n\n`;
-        if (notes) formattedDescription += `Doctor Advice / Notes:\n${notes}`;
-
-        const todayFormatted = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+    // If appointment is completed and prescription/notes provided, add to medical records
+    if (status === 'Completed' && (prescription || notes)) {
+      const app = await query('SELECT patient_id, doctor_id FROM appointments WHERE id = ?', [id]);
+      if (app.length > 0) {
+        const details = (prescription ? 'Prescription: ' + prescription + '\n' : '') + (notes ? 'Notes: ' + notes : '');
+        const today = new Date().toISOString().split('T')[0];
 
         await query(
           'INSERT INTO medical_records (patient_id, doctor_id, title, description, record_date) VALUES (?, ?, ?, ?, ?)',
-          [app.patient_id, app.doctor_id, title, formattedDescription.trim(), todayFormatted]
+          [app[0].patient_id, app[0].doctor_id, 'Doctor Consultation', details.trim(), today]
         );
       }
     }
 
-    return res.status(200).json({
-      message: `Appointment marked as ${status}${status === 'Completed' ? ' with prescription recorded' : ''}`
-    });
+    res.status(200).json({ message: `Appointment updated to ${status}` });
   } catch (error) {
-    console.error('Update appointment status error:', error);
-    return res.status(500).json({ message: 'Failed to update appointment status' });
+    console.error('Update appointment error:', error);
+    res.status(500).json({ message: 'Server error' });
   }
-}
+};
 
 module.exports = {
   createAppointment,

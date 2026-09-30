@@ -1,12 +1,12 @@
 const { query } = require('../db');
 
-// GET /doctors (All doctors with optional search or specialization filter)
-async function getAllDoctors(req, res) {
+// Get all doctors with optional search or specialization filter
+const getAllDoctors = async (req, res) => {
   try {
     const { search, specialization } = req.query;
 
     let sql = `
-      SELECT d.id, d.user_id, u.name, u.email, d.specialization, d.qualification, d.experience, d.fee, d.about
+      SELECT d.*, u.name, u.email
       FROM doctors d
       JOIN users u ON d.user_id = u.id
       WHERE 1=1
@@ -24,20 +24,20 @@ async function getAllDoctors(req, res) {
     }
 
     const doctors = await query(sql, params);
-    return res.status(200).json(doctors);
+    res.status(200).json(doctors);
   } catch (error) {
     console.error('Get doctors error:', error);
-    return res.status(500).json({ message: 'Error fetching doctors' });
+    res.status(500).json({ message: 'Server error' });
   }
-}
+};
 
-// GET /doctors/:id (Single doctor details)
-async function getDoctorById(req, res) {
+// Get single doctor details by ID
+const getDoctorById = async (req, res) => {
   try {
     const { id } = req.params;
 
     const sql = `
-      SELECT d.id, d.user_id, u.name, u.email, d.specialization, d.qualification, d.experience, d.fee, d.about
+      SELECT d.*, u.name, u.email
       FROM doctors d
       JOIN users u ON d.user_id = u.id
       WHERE d.id = ?
@@ -48,22 +48,26 @@ async function getDoctorById(req, res) {
       return res.status(404).json({ message: 'Doctor not found' });
     }
 
-    return res.status(200).json(doctors[0]);
+    res.status(200).json(doctors[0]);
   } catch (error) {
     console.error('Get doctor by ID error:', error);
-    return res.status(500).json({ message: 'Error fetching doctor details' });
+    res.status(500).json({ message: 'Server error' });
   }
-}
+};
 
-// GET /departments (Helper to list hospital departments)
-async function getDepartments(req, res) {
+// Get list of departments
+const getDepartments = async (req, res) => {
   try {
     const departments = await query('SELECT * FROM departments');
-    return res.status(200).json(departments);
+    res.status(200).json(departments);
   } catch (error) {
     console.error('Get departments error:', error);
-    return res.status(500).json({ message: 'Error fetching departments' });
+    res.status(500).json({ message: 'Server error' });
   }
-}
+};
 
-module.exports = { getAllDoctors, getDoctorById, getDepartments };
+module.exports = {
+  getAllDoctors,
+  getDoctorById,
+  getDepartments
+};

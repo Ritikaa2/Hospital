@@ -1,5 +1,6 @@
 'use client';
 
+// React aur Next.js components
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Navbar from '@/components/Navbar';
@@ -7,12 +8,15 @@ import Footer from '@/components/Footer';
 import DepartmentCard from '@/components/DepartmentCard';
 import DoctorCard from '@/components/DoctorCard';
 
+// Backend server ka URL
 const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
 export default function HomePage() {
+  // 1. State: Backend se aane wale departments aur doctors store karne ke liye
   const [departments, setDepartments] = useState([]);
   const [doctors, setDoctors] = useState([]);
 
+  // 2. Default fallback data agar backend connect na ho ya data empty ho
   const defaultDepartments = [
     { id: 1, name: 'Cardiology', description: 'Heart care and comprehensive cardiovascular treatment' },
     { id: 2, name: 'Neurology', description: 'Brain and nervous system disorders care' },
@@ -28,138 +32,136 @@ export default function HomePage() {
     { id: 3, name: 'Dr. Priya Patel', specialization: 'Neurology', qualification: 'MBBS, DM', experience: '12+ Years', fee: 700, about: 'Neurologist dedicated to migraines, neuropathy, and brain health.' }
   ];
 
+  // 3. useEffect: Page open hote hi departments aur featured doctors fetch karo
   useEffect(() => {
-    fetch(`${API}/doctors/departments`)
-      .then(res => res.json())
-      .then(data => setDepartments(data.length ? data : defaultDepartments))
-      .catch(() => setDepartments(defaultDepartments));
+    async function loadHomeData() {
+      // Departments fetch karna
+      try {
+        const deptRes = await fetch(`${API}/doctors/departments`);
+        if (deptRes.ok) {
+          const deptData = await deptRes.json();
+          setDepartments(deptData.length > 0 ? deptData : defaultDepartments);
+        } else {
+          setDepartments(defaultDepartments);
+        }
+      } catch (err) {
+        setDepartments(defaultDepartments);
+      }
 
-    fetch(`${API}/doctors`)
-      .then(res => res.json())
-      .then(data => setDoctors(data.length ? data.slice(0, 3) : defaultDoctors))
-      .catch(() => setDoctors(defaultDoctors));
+      // Doctors fetch karna
+      try {
+        const docRes = await fetch(`${API}/doctors`);
+        if (docRes.ok) {
+          const docData = await docRes.json();
+          setDoctors(docData.length > 0 ? docData.slice(0, 3) : defaultDoctors);
+        } else {
+          setDoctors(defaultDoctors);
+        }
+      } catch (err) {
+        setDoctors(defaultDoctors);
+      }
+    }
+
+    loadHomeData();
   }, []);
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-50">
+    <div className="min-h-screen flex flex-col bg-zinc-50 font-sans">
+      {/* Top Navbar */}
       <Navbar />
 
-      {/* Hero Section */}
-      <section className="py-16 bg-white border-b border-slate-100">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
-            
-            <div className="lg:col-span-7 space-y-5">
-              <span className="inline-block px-3 py-1 rounded-full bg-blue-50 text-blue-600 text-xs font-bold uppercase tracking-wider">
-                Your Health, Our Priority
-              </span>
-
-              <h1 className="text-4xl sm:text-5xl font-extrabold text-slate-900 tracking-tight leading-tight">
-                Quality Healthcare <br />
-                <span className="text-blue-600">For A Better</span> Tomorrow
-              </h1>
-
-              <p className="text-base text-slate-600 max-w-lg leading-relaxed">
-                Book appointments, consult expert doctors and manage your health records in one simple, secure place.
-              </p>
-
-              <div className="flex flex-wrap items-center gap-3 pt-2">
-                <Link
-                  href="/appointment"
-                  className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm rounded-xl shadow-sm"
-                >
-                  Book Appointment
-                </Link>
-                <Link
-                  href="/doctors"
-                  className="px-6 py-3 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-semibold text-sm rounded-xl"
-                >
-                  Meet Our Doctors
-                </Link>
-              </div>
-
-              <div className="pt-6 border-t border-slate-100 flex items-center gap-8 text-xs">
-                <div>
-                  <p className="text-xl font-bold text-slate-900">50+</p>
-                  <p className="text-slate-500">Specialist Doctors</p>
-                </div>
-                <div className="w-px h-6 bg-slate-200"></div>
-                <div>
-                  <p className="text-xl font-bold text-slate-900">10k+</p>
-                  <p className="text-slate-500">Happy Patients</p>
-                </div>
-                <div className="w-px h-6 bg-slate-200"></div>
-                <div>
-                  <p className="text-xl font-bold text-slate-900">24/7</p>
-                  <p className="text-slate-500">Hospital Support</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Doctor Card Banner */}
-            <div className="lg:col-span-5">
-              <div className="bg-gradient-to-br from-blue-600 to-indigo-700 rounded-3xl p-8 text-white space-y-4">
-                <span className="text-xs font-bold uppercase tracking-wider text-blue-200">Featured Specialist</span>
-                <h3 className="text-2xl font-bold">Dr. Anjali Sharma</h3>
-                <p className="text-xs text-blue-100">Senior Cardiologist & Surgeon</p>
-                <p className="text-xs text-blue-100 leading-relaxed">
-                  Dedicated to clinical excellence, cardiology consultations, and personalized patient recovery.
-                </p>
-                <div className="pt-4 border-t border-blue-500/50 flex justify-between text-xs">
-                  <div>
-                    <span className="font-bold block">10+ Years</span>
-                    <span className="text-blue-200">Experience</span>
-                  </div>
-                  <div>
-                    <span className="font-bold block">Rs. 500</span>
-                    <span className="text-blue-200">Consultation</span>
-                  </div>
-                  <div>
-                    <span className="font-bold block">Verified</span>
-                    <span className="text-blue-200">Licence</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
+      {/* 1. Hero Section (Full-Width Center-Aligned Modern Minimalist) */}
+      <section className="py-20 sm:py-28 bg-white border-b border-zinc-200">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-6 sm:space-y-8">
+          
+          {/* Tagline Badge */}
+          <div>
+            <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-zinc-100 text-black border border-zinc-200 text-xs font-black uppercase tracking-widest">
+              <span className="w-2 h-2 rounded-full bg-black animate-pulse"></span>
+              Your Health, Our Priority
+            </span>
           </div>
+
+          {/* Main Heading */}
+          <h1 className="text-4xl sm:text-6xl lg:text-7xl font-black text-black tracking-tight leading-[1.1]">
+            Quality Healthcare <br className="hidden sm:inline" />
+            <span className="text-zinc-400">For A Better</span> Tomorrow
+          </h1>
+
+          {/* Description */}
+          <p className="text-sm sm:text-base text-zinc-600 max-w-2xl mx-auto leading-relaxed font-medium">
+            Book appointments, consult expert doctors and manage your health records in one simple, secure place.
+          </p>
+
+          {/* Action Buttons */}
+          <div className="flex flex-wrap items-center justify-center gap-3.5 pt-2">
+            <Link
+              href="/appointment"
+              className="px-8 py-3.5 bg-black hover:bg-zinc-800 text-white font-bold text-sm rounded-xl shadow-sm transition-all"
+            >
+              Book Appointment
+            </Link>
+            <Link
+              href="/doctors"
+              className="px-8 py-3.5 bg-white border border-zinc-300 hover:bg-zinc-100 text-black font-bold text-sm rounded-xl transition-all"
+            >
+              Meet Our Doctors
+            </Link>
+          </div>
+
+          {/* Key Hospital Stats */}
+          <div className="pt-10 border-t border-zinc-100 max-w-2xl mx-auto grid grid-cols-3 gap-6 sm:gap-12 text-center">
+            <div>
+              <p className="text-2xl sm:text-3xl font-black text-black">50+</p>
+              <p className="text-xs text-zinc-500 font-semibold mt-0.5">Specialist Doctors</p>
+            </div>
+            <div className="border-x border-zinc-200 px-2 sm:px-4">
+              <p className="text-2xl sm:text-3xl font-black text-black">10k+</p>
+              <p className="text-xs text-zinc-500 font-semibold mt-0.5">Happy Patients</p>
+            </div>
+            <div>
+              <p className="text-2xl sm:text-3xl font-black text-black">24/7</p>
+              <p className="text-xs text-zinc-500 font-semibold mt-0.5">Hospital Support</p>
+            </div>
+          </div>
+
         </div>
       </section>
 
-      {/* 4 Feature Highlights */}
-      <section className="py-10 bg-slate-50 border-b border-slate-100">
+      {/* 2. Feature Highlights (4 Pillars) */}
+      <section className="py-12 bg-zinc-50 border-b border-zinc-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="p-4 rounded-xl bg-white border border-slate-100 shadow-xs">
-              <h4 className="text-sm font-bold text-slate-900">Expert Doctors</h4>
-              <p className="text-xs text-slate-500 mt-1">Experienced and verified medical professionals</p>
+            <div className="p-5 rounded-2xl bg-white border border-zinc-200 shadow-xs">
+              <h4 className="text-sm font-bold text-black">Expert Doctors</h4>
+              <p className="text-xs text-zinc-500 mt-1">Experienced and verified medical professionals</p>
             </div>
-            <div className="p-4 rounded-xl bg-white border border-slate-100 shadow-xs">
-              <h4 className="text-sm font-bold text-slate-900">Easy Booking</h4>
-              <p className="text-xs text-slate-500 mt-1">Quick and hassle-free online appointments</p>
+            <div className="p-5 rounded-2xl bg-white border border-zinc-200 shadow-xs">
+              <h4 className="text-sm font-bold text-black">Easy Booking</h4>
+              <p className="text-xs text-zinc-500 mt-1">Quick and hassle-free online appointments</p>
             </div>
-            <div className="p-4 rounded-xl bg-white border border-slate-100 shadow-xs">
-              <h4 className="text-sm font-bold text-slate-900">24/7 Support</h4>
-              <p className="text-xs text-slate-500 mt-1">Dedicated helpline and patient assistance</p>
+            <div className="p-5 rounded-2xl bg-white border border-zinc-200 shadow-xs">
+              <h4 className="text-sm font-bold text-black">24/7 Support</h4>
+              <p className="text-xs text-zinc-500 mt-1">Dedicated helpline and patient assistance</p>
             </div>
-            <div className="p-4 rounded-xl bg-white border border-slate-100 shadow-xs">
-              <h4 className="text-sm font-bold text-slate-900">Secure Records</h4>
-              <p className="text-xs text-slate-500 mt-1">Private, organized digital health history</p>
+            <div className="p-5 rounded-2xl bg-white border border-zinc-200 shadow-xs">
+              <h4 className="text-sm font-bold text-black">Secure Records</h4>
+              <p className="text-xs text-zinc-500 mt-1">Private, organized digital health history</p>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Departments Section */}
+      {/* 3. Departments Section */}
       <section id="departments" className="py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between mb-8">
             <div>
-              <h2 className="text-2xl font-bold text-slate-900">Our Departments</h2>
-              <p className="text-xs text-slate-500 mt-0.5">Specialized healthcare for your specific needs</p>
+              <h2 className="text-2xl font-bold text-black">Our Departments</h2>
+              <p className="text-xs text-zinc-500 mt-0.5">Specialized healthcare for your specific needs</p>
             </div>
-            <Link href="/doctors" className="text-xs font-bold text-blue-600 hover:text-blue-700">
-              View All
+            <Link href="/doctors" className="text-xs font-bold text-black hover:underline">
+              View All →
             </Link>
           </div>
 
@@ -171,16 +173,16 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Featured Doctors Section */}
-      <section id="doctors" className="py-16 bg-white border-t border-slate-100">
+      {/* 4. Featured Doctors Section */}
+      <section id="doctors" className="py-16 bg-white border-t border-zinc-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between mb-8">
             <div>
-              <h2 className="text-2xl font-bold text-slate-900">Meet Our Doctors</h2>
-              <p className="text-xs text-slate-500 mt-0.5">Qualified doctors ready for consultation</p>
+              <h2 className="text-2xl font-bold text-black">Meet Our Doctors</h2>
+              <p className="text-xs text-zinc-500 mt-0.5">Qualified doctors ready for consultation</p>
             </div>
-            <Link href="/doctors" className="text-xs font-bold text-blue-600 hover:text-blue-700">
-              Explore All Doctors
+            <Link href="/doctors" className="text-xs font-bold text-black hover:underline">
+              Explore All Doctors →
             </Link>
           </div>
 
@@ -192,6 +194,7 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* Footer */}
       <Footer />
     </div>
   );

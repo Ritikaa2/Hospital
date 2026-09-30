@@ -80,8 +80,12 @@ async function query(sql, params = []) {
 
   if (trimmed.startsWith('select')) {
     if (trimmed.includes('from users')) {
-      if (trimmed.includes('email = ?')) {
+      if (trimmed.includes('email = ?') || trimmed.includes('lower(email) = ?')) {
         const u = memoryStore.users.find(x => x.email.toLowerCase() === (params[0] || '').toLowerCase());
+        return u ? [u] : [];
+      }
+      if (trimmed.includes('id = ?')) {
+        const u = memoryStore.users.find(x => x.id == params[0]);
         return u ? [u] : [];
       }
       return memoryStore.users;

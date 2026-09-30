@@ -1,30 +1,39 @@
 'use client';
 
+// React hooks, Next.js routing, components
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Sidebar from '@/components/Sidebar';
 
+// Backend server URL
 const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
 export default function DoctorAppointmentsPage() {
   const router = useRouter();
+
+  // 1. State variables
   const [doctorName, setDoctorName] = useState('');
   const [appointments, setAppointments] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  // 2. Prescription Modal State
   const [completeModalApp, setCompleteModalApp] = useState(null);
   const [diagnosis, setDiagnosis] = useState('');
   const [prescription, setPrescription] = useState('');
   const [notes, setNotes] = useState('');
   const [submitting, setSubmitting] = useState(false);
+
+  // 3. View Prescription Details Modal State
   const [viewModalApp, setViewModalApp] = useState(null);
 
+  // Fallback appointments for testing
   const fallbackAppointments = [
     { id: 1, appointment_time: '10:00 AM', appointment_date: '2026-10-05', patient_name: 'Ritika Toora', patient_email: 'ritika@gmail.com', department_name: 'Cardiology', status: 'Confirmed', prescription: 'Tab Atorvastatin 20mg OD at night\nTab Telmisartan 40mg OD in morning', consultation_title: 'Prescription - Hypertension' },
     { id: 2, appointment_time: '11:00 AM', appointment_date: '2026-10-05', patient_name: 'Aman Verma', patient_email: 'aman@gmail.com', department_name: 'Cardiology', status: 'Confirmed', prescription: 'Tab Aspirin 75mg OD after lunch', consultation_title: 'Prescription - Cardiac Checkup' }
   ];
 
+  // 4. Backend se doctor appointments fetch karna
   const fetchDoctorAppointments = async (token) => {
     try {
       const res = await fetch(`${API}/appointments/doctor`, {
@@ -43,6 +52,7 @@ export default function DoctorAppointmentsPage() {
     }
   };
 
+  // 5. useEffect: User authentication check
   useEffect(() => {
     const token = localStorage.getItem('token');
     const name = localStorage.getItem('name');
@@ -62,6 +72,7 @@ export default function DoctorAppointmentsPage() {
     fetchDoctorAppointments(token);
   }, [router]);
 
+  // 6. Quick Status update handler (Confirm ya Cancel)
   const handleQuickStatus = async (id, newStatus) => {
     const token = localStorage.getItem('token');
     try {
@@ -84,6 +95,7 @@ export default function DoctorAppointmentsPage() {
     }
   };
 
+  // 7. Prescription Modal open karna
   const openCompleteModal = (app) => {
     setCompleteModalApp(app);
     setDiagnosis('General Consultation');
@@ -91,12 +103,14 @@ export default function DoctorAppointmentsPage() {
     setNotes('Complete rest advised for 2 days. Drink warm water.');
   };
 
+  // 8. Prescription Submit & Consultation Complete karna
   const handleCompleteConsultationSubmit = async (e) => {
     e.preventDefault();
     if (!completeModalApp) return;
 
     setSubmitting(true);
     const token = localStorage.getItem('token');
+
     try {
       await fetch(`${API}/appointments/${completeModalApp.id}/status`, {
         method: 'PUT',
@@ -135,34 +149,40 @@ export default function DoctorAppointmentsPage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-50">
-      <header className="h-16 bg-white border-b border-slate-100 px-6 flex items-center justify-between sticky top-0 z-40">
+    <div className="min-h-screen flex flex-col bg-zinc-50 font-sans">
+      
+      {/* Top Header */}
+      <header className="h-16 bg-white border-b border-zinc-200 px-6 flex items-center justify-between sticky top-0 z-40">
         <Link href="/" className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center text-white font-bold text-lg">
+          <div className="w-9 h-9 rounded-xl bg-black flex items-center justify-center text-white font-black text-lg shadow-sm">
             +
           </div>
-          <span className="font-bold text-slate-900 text-lg">MediCare+</span>
+          <span className="font-extrabold text-black text-lg tracking-tight">MediCare+</span>
         </Link>
-        <div className="text-xs font-bold text-slate-800">{doctorName}</div>
+        <div className="text-xs font-bold text-zinc-800 bg-zinc-100 px-3 py-1.5 rounded-full border border-zinc-200">
+          {doctorName}
+        </div>
       </header>
 
+      {/* Main Layout: Sidebar + Content */}
       <div className="flex-1 flex">
         <Sidebar role="doctor" userName={doctorName} />
 
         <main className="flex-1 p-6 sm:p-8 max-w-7xl">
           <div className="mb-6">
-            <h1 className="text-2xl font-bold text-slate-900">Appointments Schedule</h1>
-            <p className="text-xs text-slate-500 mt-0.5">Manage patient consultation appointments and prescriptions</p>
+            <h1 className="text-2xl font-black text-black tracking-tight">Appointments Schedule</h1>
+            <p className="text-xs text-zinc-500 mt-1">Manage patient consultation appointments and prescriptions</p>
           </div>
 
-          <div className="bg-white rounded-2xl border border-slate-100 shadow-xs p-6">
+          {/* Appointments Table */}
+          <div className="bg-white rounded-2xl sm:rounded-3xl border border-zinc-200 shadow-sm p-6">
             {loading ? (
-              <div className="text-center py-12 text-slate-400 text-xs">Loading schedule...</div>
+              <div className="text-center py-12 text-zinc-400 text-xs">Loading schedule...</div>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs">
                   <thead>
-                    <tr className="border-b border-slate-100 text-slate-400 font-semibold uppercase">
+                    <tr className="border-b border-zinc-200 text-zinc-400 font-bold uppercase tracking-wider text-[11px]">
                       <th className="pb-3 px-3">Date & Time</th>
                       <th className="pb-3 px-3">Patient</th>
                       <th className="pb-3 px-3">Email</th>
@@ -172,29 +192,29 @@ export default function DoctorAppointmentsPage() {
                       <th className="pb-3 px-3 text-right">Action</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-50 text-slate-700">
+                  <tbody className="divide-y divide-zinc-100 text-zinc-700">
                     {appointments.map((item) => {
                       const isConfirmed = item.status === 'Confirmed';
                       const isPending = item.status === 'Pending';
                       const isCompleted = item.status === 'Completed';
 
                       return (
-                        <tr key={item.id} className="hover:bg-slate-50">
-                          <td className="py-3.5 px-3 font-semibold text-slate-900 whitespace-nowrap">
+                        <tr key={item.id} className="hover:bg-zinc-50/70 transition-colors">
+                          <td className="py-3.5 px-3 font-bold text-black whitespace-nowrap">
                             {item.appointment_date} ({item.appointment_time || '10:00 AM'})
                           </td>
-                          <td className="py-3.5 px-3 font-bold">{item.patient_name || 'Patient'}</td>
-                          <td className="py-3.5 px-3 text-slate-500">{item.patient_email || 'patient@gmail.com'}</td>
-                          <td className="py-3.5 px-3 text-slate-600">{item.department_name || 'General'}</td>
+                          <td className="py-3.5 px-3 font-extrabold text-black">{item.patient_name || 'Patient'}</td>
+                          <td className="py-3.5 px-3 text-zinc-500">{item.patient_email || 'patient@gmail.com'}</td>
+                          <td className="py-3.5 px-3 text-zinc-700 font-medium">{item.department_name || 'General'}</td>
                           <td className="py-3.5 px-3">
-                            <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                            <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold border ${
                               isConfirmed
-                                ? 'bg-emerald-50 text-emerald-700'
+                                ? 'bg-black text-white border-black'
                                 : isPending
-                                ? 'bg-amber-50 text-amber-700'
+                                ? 'bg-zinc-100 text-zinc-700 border-zinc-300'
                                 : isCompleted
-                                ? 'bg-blue-50 text-blue-700'
-                                : 'bg-rose-50 text-rose-700'
+                                ? 'bg-zinc-100 text-black border-zinc-200'
+                                : 'bg-zinc-50 text-zinc-400 border-zinc-200 line-through'
                             }`}>
                               {item.status}
                             </span>
@@ -203,12 +223,12 @@ export default function DoctorAppointmentsPage() {
                             {item.prescription ? (
                               <button
                                 onClick={() => setViewModalApp(item)}
-                                className="text-blue-600 hover:text-blue-700 font-semibold underline text-xs"
+                                className="text-black hover:text-zinc-600 font-bold underline text-xs"
                               >
                                 View Notes
                               </button>
                             ) : (
-                              <span className="text-slate-400">None</span>
+                              <span className="text-zinc-400">None</span>
                             )}
                           </td>
                           <td className="py-3.5 px-3 text-right space-x-1.5 whitespace-nowrap">
@@ -216,13 +236,13 @@ export default function DoctorAppointmentsPage() {
                               <>
                                 <button
                                   onClick={() => handleQuickStatus(item.id, 'Confirmed')}
-                                  className="px-2.5 py-1 bg-emerald-600 text-white rounded-lg font-semibold text-xs"
+                                  className="px-3 py-1.5 bg-black hover:bg-zinc-800 text-white rounded-xl font-bold text-xs transition-colors"
                                 >
                                   Confirm
                                 </button>
                                 <button
                                   onClick={() => handleQuickStatus(item.id, 'Cancelled')}
-                                  className="px-2.5 py-1 bg-rose-50 text-rose-600 rounded-lg font-semibold text-xs"
+                                  className="px-3 py-1.5 border border-zinc-300 hover:bg-zinc-100 text-zinc-700 rounded-xl font-bold text-xs transition-colors"
                                 >
                                   Cancel
                                 </button>
@@ -233,13 +253,13 @@ export default function DoctorAppointmentsPage() {
                               <>
                                 <button
                                   onClick={() => openCompleteModal(item)}
-                                  className="px-2.5 py-1 bg-blue-600 text-white rounded-lg font-semibold text-xs"
+                                  className="px-3 py-1.5 bg-black hover:bg-zinc-800 text-white rounded-xl font-bold text-xs transition-colors"
                                 >
                                   Prescribe & Complete
                                 </button>
                                 <button
                                   onClick={() => handleQuickStatus(item.id, 'Cancelled')}
-                                  className="px-2.5 py-1 border rounded-lg text-slate-600 font-semibold text-xs"
+                                  className="px-3 py-1.5 border border-zinc-300 hover:bg-zinc-100 text-zinc-700 rounded-xl font-bold text-xs transition-colors"
                                 >
                                   Cancel
                                 </button>
@@ -249,14 +269,14 @@ export default function DoctorAppointmentsPage() {
                             {isCompleted && (
                               <button
                                 onClick={() => setViewModalApp(item)}
-                                className="px-2.5 py-1 bg-slate-100 text-slate-700 rounded-lg font-semibold text-xs"
+                                className="px-3 py-1.5 bg-zinc-100 hover:bg-zinc-200 text-black border border-zinc-200 rounded-xl font-bold text-xs transition-colors"
                               >
                                 View Details
                               </button>
                             )}
 
                             {item.status === 'Cancelled' && (
-                              <span className="text-slate-400 text-xs">Cancelled</span>
+                              <span className="text-zinc-400 text-xs">Cancelled</span>
                             )}
                           </td>
                         </tr>
@@ -268,63 +288,63 @@ export default function DoctorAppointmentsPage() {
             )}
           </div>
 
-          {/* Complete Consultation Modal */}
+          {/* Modal: Add Prescription */}
           {completeModalApp && (
-            <div className="fixed inset-0 bg-slate-900/40 flex items-center justify-center p-4 z-50">
-              <div className="bg-white rounded-3xl p-6 max-w-lg w-full border border-slate-100 shadow-xl space-y-3 text-xs">
-                <div className="flex justify-between items-center pb-2 border-b">
-                  <h3 className="font-bold text-slate-900 text-sm">Add Prescription</h3>
-                  <button onClick={() => setCompleteModalApp(null)} className="font-bold text-slate-400">X</button>
+            <div className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 z-50">
+              <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-lg w-full border border-zinc-200 shadow-2xl space-y-4 text-xs">
+                <div className="flex justify-between items-center pb-3 border-b border-zinc-100">
+                  <h3 className="font-extrabold text-black text-sm">Add Prescription</h3>
+                  <button onClick={() => setCompleteModalApp(null)} className="font-bold text-zinc-400 hover:text-black">✕</button>
                 </div>
 
-                <form onSubmit={handleCompleteConsultationSubmit} className="space-y-3">
+                <form onSubmit={handleCompleteConsultationSubmit} className="space-y-4">
                   <div>
-                    <label className="block text-slate-700 font-semibold mb-1">Diagnosis</label>
+                    <label className="block text-zinc-800 font-bold mb-1.5">Diagnosis</label>
                     <input
                       type="text"
                       value={diagnosis}
                       onChange={(e) => setDiagnosis(e.target.value)}
                       placeholder="e.g. Viral Fever"
-                      className="w-full px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-zinc-200 focus:outline-none focus:ring-2 focus:ring-black font-medium"
                       required
                     />
                   </div>
 
                   <div>
-                    <label className="block text-slate-700 font-semibold mb-1">Prescription</label>
+                    <label className="block text-zinc-800 font-bold mb-1.5">Prescription</label>
                     <textarea
                       rows={3}
                       value={prescription}
                       onChange={(e) => setPrescription(e.target.value)}
                       placeholder="e.g. Tab Paracetamol 650mg TDS x 3 days"
-                      className="w-full p-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full p-3 rounded-xl border border-zinc-200 focus:outline-none focus:ring-2 focus:ring-black font-medium"
                       required
                     />
                   </div>
 
                   <div>
-                    <label className="block text-slate-700 font-semibold mb-1">Doctor Notes</label>
+                    <label className="block text-zinc-800 font-bold mb-1.5">Doctor Notes</label>
                     <textarea
                       rows={2}
                       value={notes}
                       onChange={(e) => setNotes(e.target.value)}
                       placeholder="e.g. Complete rest advised for 2 days"
-                      className="w-full p-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full p-3 rounded-xl border border-zinc-200 focus:outline-none focus:ring-2 focus:ring-black font-medium"
                     />
                   </div>
 
-                  <div className="pt-2 flex justify-end gap-2">
+                  <div className="pt-2 flex justify-end gap-2.5">
                     <button
                       type="button"
                       onClick={() => setCompleteModalApp(null)}
-                      className="px-4 py-2 border rounded-xl font-semibold"
+                      className="px-4 py-2 border border-zinc-300 hover:bg-zinc-100 text-zinc-700 font-bold rounded-xl transition-colors"
                     >
                       Cancel
                     </button>
                     <button
                       type="submit"
                       disabled={submitting}
-                      className="px-5 py-2 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700"
+                      className="px-5 py-2 bg-black hover:bg-zinc-800 text-white rounded-xl font-bold transition-colors disabled:opacity-50"
                     >
                       {submitting ? 'Saving...' : 'Save & Complete'}
                     </button>
@@ -334,22 +354,35 @@ export default function DoctorAppointmentsPage() {
             </div>
           )}
 
-          {/* View Details Modal */}
+          {/* Modal: View Details */}
           {viewModalApp && (
-            <div className="fixed inset-0 bg-slate-900/40 flex items-center justify-center p-4 z-50">
-              <div className="bg-white rounded-3xl p-6 max-w-md w-full border border-slate-100 shadow-xl space-y-3 text-xs">
-                <div className="flex justify-between items-center pb-2 border-b">
-                  <h3 className="font-bold text-slate-900 text-sm">{viewModalApp.consultation_title || 'Consultation Details'}</h3>
-                  <button onClick={() => setViewModalApp(null)} className="font-bold text-slate-400">X</button>
+            <div className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 z-50">
+              <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-md w-full border border-zinc-200 shadow-2xl space-y-4 text-xs">
+                <div className="flex justify-between items-center pb-3 border-b border-zinc-100">
+                  <h3 className="font-extrabold text-black text-sm">{viewModalApp.consultation_title || 'Consultation Details'}</h3>
+                  <button onClick={() => setViewModalApp(null)} className="font-bold text-zinc-400 hover:text-black">✕</button>
                 </div>
-                <div className="flex justify-between"><span className="text-slate-400">Patient:</span><span className="font-bold">{viewModalApp.patient_name}</span></div>
-                <div className="flex justify-between"><span className="text-slate-400">Date:</span><span className="font-bold">{viewModalApp.appointment_date} ({viewModalApp.appointment_time})</span></div>
+                <div className="flex justify-between py-1">
+                  <span className="text-zinc-500 font-medium">Patient:</span>
+                  <span className="font-bold text-black">{viewModalApp.patient_name}</span>
+                </div>
+                <div className="flex justify-between py-1">
+                  <span className="text-zinc-500 font-medium">Date:</span>
+                  <span className="font-bold text-black">{viewModalApp.appointment_date} ({viewModalApp.appointment_time})</span>
+                </div>
                 <div className="pt-2">
-                  <span className="text-slate-400 font-semibold block mb-1">Prescription & Advice:</span>
-                  <p className="bg-slate-50 p-3 rounded-xl border border-slate-200 whitespace-pre-line text-slate-700 font-mono text-[11px]">{viewModalApp.prescription || 'No prescription notes added.'}</p>
+                  <span className="text-zinc-500 font-bold block mb-1.5">Prescription & Advice:</span>
+                  <p className="bg-zinc-50 p-3.5 rounded-xl border border-zinc-200 whitespace-pre-line text-zinc-800 font-mono text-[11px] leading-relaxed">
+                    {viewModalApp.prescription || 'No prescription notes added.'}
+                  </p>
                 </div>
                 <div className="pt-2 flex justify-end">
-                  <button onClick={() => setViewModalApp(null)} className="px-4 py-1.5 bg-blue-600 text-white rounded-xl font-semibold">Close</button>
+                  <button
+                    onClick={() => setViewModalApp(null)}
+                    className="px-5 py-2 bg-black hover:bg-zinc-800 text-white rounded-xl font-bold transition-colors"
+                  >
+                    Close
+                  </button>
                 </div>
               </div>
             </div>
